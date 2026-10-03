@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atelier PC – Suivi de reconditionnement</title>
+<style>
+:root{--bg:#edf0f2;--panel:#fff;--ink:#14232b;--mute:#5d6f78;--line:#d4dce1;--brand:#0f5f66;--brand-d:#0a4a50;--acc:#f2b705;--ok:#13804a;--ko:#c2392b;--okbg:#e2f4ea;--kobg:#fbe5e2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--ink);color:#fff;padding:14px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;border-bottom:4px solid var(--acc)}
+header h1{margin:0;font-size:20px;letter-spacing:.2px;flex:1 1 220px}
+header small{display:block;font-weight:400;color:#9db1ba;font-size:12px}
+main{max-width:1200px;margin:20px auto;padding:0 16px}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px}
+button:hover{border-color:var(--brand)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--acc);outline-offset:1px}
+.primary{background:var(--acc);border-color:var(--acc);color:#1b1500;font-weight:700}
+.primary:hover{background:#ffc928}
+header button:not(.primary){background:transparent;color:#fff;border-color:#4b6370}
+.tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.tools input[type=search]{flex:1 1 280px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;font:inherit}
+.count{color:var(--mute);font-size:13px}
+.wrap{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:#f6f8f9;font-size:13px;color:var(--mute);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:#f9fbfb}
+.id{font-weight:700;color:var(--brand)}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:600}
+.s-att{background:#e8ecef;color:#44555e}.s-rep{background:#fff1c7;color:#7a5a00}.s-pret{background:var(--okbg);color:var(--ok)}.s-ven{background:#dbe7f6;color:#25508a}
+.pos{color:var(--ok);font-weight:700}.neg{color:var(--ko);font-weight:700}
+.act button{padding:4px 9px;font-size:13px;margin-right:4px}
+.empty{padding:40px;text-align:center;color:var(--mute)}
+/* Modal */
+#modal{position:fixed;inset:0;background:rgba(10,20,25,.6);display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:24px 12px;z-index:10}
+#modal.open{display:flex}
+.card{background:var(--panel);border-radius:10px;width:100%;max-width:820px;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.card>h2{margin:0;padding:16px 22px;border-bottom:1px solid var(--line);font-size:18px;display:flex;justify-content:space-between;align-items:center}
+.body{padding:18px 22px}
+fieldset{border:1px solid var(--line);border-radius:8px;margin:0 0 16px;padding:12px 14px}
+legend{font-weight:700;padding:0 6px;color:var(--brand)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+label{display:block;font-size:13px;color:var(--mute);font-weight:600}
+label input,label select,label textarea{display:block;width:100%;margin-top:4px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font:inherit;color:var(--ink);background:#fff}
+.radios label{display:inline-flex;gap:6px;align-items:center;margin-right:18px;color:var(--ink);font-weight:500}
+.radios input{width:auto;margin:0}
+.parts td{padding:6px 4px;border:0;white-space:normal}
+.parts input{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;font:inherit}
+.fin{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;align-items:end}
+.fin div.k{background:#f6f8f9;border-radius:8px;padding:10px 12px}
+.fin b{display:block;font-size:19px;font-variant-numeric:tabular-nums}
+#profitBox.pos{background:var(--okbg)}#profitBox.neg{background:var(--kobg)}
+.foot{padding:14px 22px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;background:#f6f8f9;border-radius:0 0 10px 10px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:6px;display:none;z-index:20}
+/* Fiche atelier */
+#sheet{display:none}
+@media print{
+  @page{size:A4;margin:12mm}
+  body>*:not(#sheet){display:none!important}
+  body{background:#fff}
+  #sheet{display:block;color:#000;font:13px/1.4 Arial,Helvetica,sans-serif}
+  #sheet .top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:4px solid #000;padding-bottom:8px}
+  #sheet .big{font-size:40px;font-weight:800;letter-spacing:1px}
+  #sheet h3{margin:16px 0 6px;font-size:14px;background:#000;color:#fff;padding:3px 8px}
+  #sheet table{border:1px solid #000}
+  #sheet th,#sheet td{border:1px solid #000;padding:5px 8px;background:#fff;color:#000;font-size:13px}
+  #sheet th{width:32%;font-weight:700;text-align:left}
+  #sheet .chk span{display:inline-block;margin:6px 24px 6px 0;font-size:14px}
+  #sheet .box{display:inline-block;width:14px;height:14px;border:2px solid #000;vertical-align:middle;margin-right:6px}
+  #sheet .notes{border:1px solid #000;min-height:70px;padding:6px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Atelier PC<small>Suivi de reconditionnement</small></h1>
+  <button id="btnExport" title="Télécharge un fichier JSON à ranger dans votre dossier Google Drive synchronisé">Exporter (JSON)</button>
+  <button id="btnImport">Importer</button>
+  <input type="file" id="fileImport" accept="application/json,.json" hidden>
+  <button class="primary" id="btnNew">+ Nouveau PC</button>
+</header>
+<main>
+  <div class="tools">
+    <input type="search" id="search" placeholder="Rechercher par n° de suivi ou modèle…" aria-label="Rechercher">
+    <span class="count" id="count"></span>
+  </div>
+  <div class="wrap">
+    <table>
+      <thead><tr><th>N° suivi</th><th>Modèle</th><th>Statut</th><th class="n">Achat</th><th class="n">Pièces</th><th class="n">Revient</th><th class="n">Prix vente</th><th class="n">Bénéfice</th><th></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty" id="empty" hidden></div>
+  </div>
+  <p class="count" id="saveInfo"></p>
+</main>
+
+<div id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="card">
+    <h2><span id="mTitle"></span><button id="mClose" aria-label="Fermer">✕</button></h2>
+    <div class="body">
+      <fieldset><legend>Informations générales</legend>
+        <div class="grid">
+          <label>Modèle du PC<input id="model" placeholder="ex : Dell Latitude 5490"></label>
+          <label>Statut<select id="status"></select></label>
+          <label>Prix d'achat (€)<input id="buy" type="number" min="0" step="0.01" value="0"></label>
+        </div>
+      </fieldset>
+      <fieldset><legend>Diagnostic</legend>
+        <div class="grid" id="diag"></div>
+        <div class="radios" style="margin-top:12px"><b style="font-size:13px;color:var(--mute)">Remise en état : </b>
+          <label><input type="radio" name="refurb" value="Oui" checked> Oui</label>
+          <label><input type="radio" name="refurb" value="Non"> Non (pour pièces)</label>
+        </div>
+        <label style="margin-top:10px">Notes<textarea id="notes" rows="2"></textarea></label>
+      </fieldset>
+      <fieldset><legend>Pièces à acheter</legend>
+        <table class="parts"><tbody id="parts"></tbody></table>
+        <button id="addPart" type="button" style="margin-top:6px">+ Ajouter une pièce</button>
+      </fieldset>
+      <fieldset><legend>Rentabilité</legend>
+        <div class="fin">
+          <div class="k">Total pièces<b id="tParts"></b></div>
+          <div class="k">Coût de revient<b id="tCost"></b></div>
+          <label>Prix de vente estimé (€)<input id="sale" type="number" min="0" step="0.01" value="0"></label>
+          <div class="k" id="profitBox">Bénéfice net prévisionnel<b id="tProfit"></b></div>
+        </div>
+      </fieldset>
+    </div>
+    <div class="foot">
+      <button id="mPrint">Imprimer la Fiche Atelier</button>
+      <button id="mCancel">Annuler</button>
+      <button class="primary" id="mSave">Enregistrer</button>
+    </div>
+  </div>
+</div>
+<div id="sheet"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+const KEY='atelier_pc_v1';
+const STATUS=['En attente','En réparation','Prêt à la vente','Vendu'];
+const SCLASS={'En attente':'s-att','En réparation':'s-rep','Prêt à la vente':'s-pret','Vendu':'s-ven'};
+const DIAG=[
+  ['charger','Chargeur',['Fonctionnel','Non testé','HS','Absent']],
+  ['diskState','Disque dur – état',['Bon','Usé','HS','Absent']],
+  ['diskType','Disque dur – type',['SSD SATA','NVMe','HDD','eMMC','Aucun']],
+  ['diskSize','Disque dur – capacité',null,'ex : 256 Go'],
+  ['ramState','RAM – état',['Bonne','Défaut','HS','Absente']],
+  ['ramType','RAM – type',['DDR3','DDR3L','DDR4','DDR5','LPDDR4/5 (soudée)']],
+  ['ramSize','RAM – capacité',null,'ex : 8 Go'],
+  ['battery','Batterie',['Bonne','Usée','HS','Absente']],
+  ['keyboard','Clavier',['Bon','Touches défectueuses','HS']]
+];
+const $=s=>document.querySelector(s);
+const eur=n=>(+n||0).toLocaleString('fr-FR',{style:'currency',currency:'EUR'});
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let pcs=[],editing=null,parts=[];
+
+function load(){try{pcs=JSON.parse(localStorage.getItem(KEY))||[]}catch(e){pcs=[]}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(pcs));$('#saveInfo').textContent='Sauvegarde automatique dans ce navigateur · '+new Date().toLocaleTimeString('fr-FR')+' · pensez à exporter régulièrement le fichier JSON.'}catch(e){toast('Sauvegarde locale impossible : exportez vos données.')}}
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',2600)}
+function calc(p){const pt=(p.parts||[]).reduce((s,x)=>s+(+x.cost||0),0),cost=(+p.buy||0)+pt;return{pt,cost,profit:(+p.sale||0)-cost}}
+function nextId(){const y=new Date().getFullYear(),re=new RegExp('^PC-'+y+'-(\\d+)$');let m=0;pcs.forEach(p=>{const r=re.exec(p.id);if(r)m=Math.max(m,+r[1])});return'PC-'+y+'-'+String(m+1).padStart(3,'0')}
+
+function render(){
+  const q=$('#search').value.trim().toLowerCase();
+  const list=pcs.filter(p=>!q||p.id.toLowerCase().includes(q)||(p.model||'').toLowerCase().includes(q));
+  $('#rows').innerHTML=list.map(p=>{const c=calc(p);return`<tr data-id="${esc(p.id)}">
+    <td class="id">${esc(p.id)}</td><td>${esc(p.model)}</td>
+    <td><span class="badge ${SCLASS[p.status]||''}">${esc(p.status)}</span></td>
+    <td class="n">${eur(p.buy)}</td><td class="n">${eur(c.pt)}</td><td class="n">${eur(c.cost)}</td><td class="n">${eur(p.sale)}</td>
+    <td class="n ${c.profit>=0?'pos':'neg'}">${eur(c.profit)}</td>
+    <td class="act"><button data-a="edit">Modifier</button><button data-a="print">Fiche</button><button data-a="del">Supprimer</button></td></tr>`}).join('');
+  const e=$('#empty');e.hidden=list.length>0;
+  e.textContent=pcs.length?'Aucun PC ne correspond à « '+$('#search').value+' ».':'Aucun PC enregistré. Cliquez sur « + Nouveau PC » pour commencer.';
+  $('#count').textContent=list.length+' / '+pcs.length+' PC';
+}
+
+function buildForm(){
+  $('#status').innerHTML=STATUS.map(s=>`<option>${s}</option>`).join('');
+  $('#diag').innerHTML=DIAG.map(d=>d[2]?`<label>${d[1]}<select id="${d[0]}">${d[2].map(o=>`<option>${o}</option>`).join('')}</select></label>`:`<label>${d[1]}<input id="${d[0]}" placeholder="${d[3]}"></label>`).join('');
+}
+function renderParts(){
+  $('#parts').innerHTML=parts.length?parts.map((x,i)=>`<tr><td><input data-i="${i}" data-k="name" value="${esc(x.name)}" placeholder="Pièce (ex : batterie, SSD 256 Go)"></td><td style="width:130px"><input data-i="${i}" data-k="cost" type="number" min="0" step="0.01" value="${+x.cost||0}" aria-label="Coût estimé"></td><td style="width:40px"><button type="button" data-del="${i}" aria-label="Supprimer la pièce">✕</button></td></tr>`).join(''):'<tr><td style="color:var(--mute)">Aucune pièce à commander.</td></tr>';
+  totals();
+}
+function totals(){
+  const pt=parts.reduce((s,x)=>s+(+x.cost||0),0),cost=(+$('#buy').value||0)+pt,pr=(+$('#sale').value||0)-cost;
+  $('#tParts').textContent=eur(pt);$('#tCost').textContent=eur(cost);$('#tProfit').textContent=eur(pr);
+  $('#profitBox').className='k '+(pr>=0?'pos':'neg');
+}
+function openModal(p){
+  editing=p?p.id:null;
+  $('#mTitle').textContent=p?'Fiche '+p.id:'Nouveau PC – '+nextId();
+  const d=p||{model:'',status:STATUS[0],buy:0,sale:0,refurb:'Oui',notes:'',parts:[]};
+  $('#model').value=d.model;$('#status').value=d.status;$('#buy').value=d.buy;$('#sale').value=d.sale;$('#notes').value=d.notes||'';
+  DIAG.forEach(x=>{const el=$('#'+x[0]);if(d[x[0]]!=null)el.value=d[x[0]];else el.selectedIndex=0;if(!x[2]&&d[x[0]]==null)el.value=''});
+  document.querySelector('input[name=refurb][value='+(d.refurb||'Oui')+']').checked=true;
+  parts=(d.parts||[]).map(x=>({...x}));renderParts();
+  $('#modal').classList.add('open');$('#model').focus();
+}
+function closeModal(){$('#modal').classList.remove('open')}
+function collect(){
+  const o={model:$('#model').value.trim(),status:$('#status').value,buy:+$('#buy').value||0,sale:+$('#sale').value||0,notes:$('#notes').value.trim(),
+    refurb:document.querySelector('input[name=refurb]:checked').value,parts:parts.filter(x=>x.name.trim()||+x.cost)};
+  DIAG.forEach(x=>o[x[0]]=$('#'+x[0]).value.trim());return o;
+}
+function saveCurrent(){
+  const o=collect();if(!o.model){toast('Indiquez le modèle du PC.');$('#model').focus();return null}
+  if(editing){const i=pcs.findIndex(p=>p.id===editing);o.id=editing;o.created=pcs[i].created;pcs[i]=o}
+  else{o.id=nextId();o.created=new Date().toISOString();pcs.unshift(o);editing=o.id;$('#mTitle').textContent='Fiche '+o.id}
+  save();render();return o;
+}
+
+function printSheet(p){
+  const c=calc(p),row=(a,b)=>`<tr><th>${a}</th><td>${esc(b)||'—'}</td></tr>`;
+  const disk=[p.diskState,p.diskType,p.diskSize].filter(Boolean).join(' · '),ram=[p.ramState,p.ramType,p.ramSize].filter(Boolean).join(' · ');
+  $('#sheet').innerHTML=`<div class="top"><div><div>Fiche atelier</div><div class="big">${esc(p.id)}</div></div><div style="text-align:right">Créée le ${new Date(p.created||Date.now()).toLocaleDateString('fr-FR')}<br>Imprimée le ${new Date().toLocaleDateString('fr-FR')}</div></div>
+  <h3>Machine</h3><table>${row('Modèle',p.model)}${row('Statut',p.status)}${row('Remise en état',p.refurb==='Non'?'Non – pour pièces':'Oui')}</table>
+  <h3>Diagnostic</h3><table>${row('Chargeur',p.charger)}${row('Disque dur',disk)}${row('Mémoire RAM',ram)}${row('Batterie',p.battery)}${row('Clavier',p.keyboard)}</table>
+  <h3>Pièces à commander</h3><table>${(p.parts||[]).length?p.parts.map(x=>`<tr><td>${esc(x.name)}</td><td style="width:90px;text-align:right">${eur(x.cost)}</td></tr>`).join('')+`<tr><th>Total pièces</th><td style="text-align:right"><b>${eur(c.pt)}</b></td></tr>`:'<tr><td>Aucune</td></tr>'}</table>
+  <h3>Finances</h3><table>${row('Prix d\'achat',eur(p.buy))}${row('Coût de revient',eur(c.cost))}${row('Prix de vente estimé',eur(p.sale))}${row('Bénéfice prévisionnel',eur(c.profit))}</table>
+  <h3>Contrôles</h3><div class="chk"><span><i class="box"></i>Nettoyage</span><span><i class="box"></i>Pièces posées</span><span><i class="box"></i>OS installé</span><span><i class="box"></i>Test final</span><span><i class="box"></i>Photos</span></div>
+  <h3>Notes</h3><div class="notes">${esc(p.notes)}</div>`;
+  setTimeout(()=>window.print(),50);
+}
+
+/* Événements */
+$('#search').addEventListener('input',render);
+$('#btnNew').onclick=()=>openModal();
+$('#mClose').onclick=$('#mCancel').onclick=closeModal;
+$('#modal').addEventListener('mousedown',e=>{if(e.target.id==='modal')closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+$('#mSave').onclick=()=>{if(saveCurrent()){closeModal();toast('Enregistré')}};
+$('#mPrint').onclick=()=>{const o=saveCurrent();if(o)printSheet(o)};
+$('#addPart').onclick=()=>{parts.push({name:'',cost:0});renderParts();const i=document.querySelectorAll('#parts input[data-k=name]');i[i.length-1].focus()};
+$('#parts').addEventListener('input',e=>{const t=e.target;if(t.dataset.i==null)return;parts[t.dataset.i][t.dataset.k]=t.dataset.k==='cost'?(+t.value||0):t.value;totals()});
+$('#parts').addEventListener('click',e=>{const i=e.target.dataset.del;if(i!=null){parts.splice(i,1);renderParts()}});
+$('#buy').oninput=$('#sale').oninput=totals;
+$('#rows').addEventListener('click',e=>{
+  const a=e.target.dataset.a;if(!a)return;
+  const p=pcs.find(x=>x.id===e.target.closest('tr').dataset.id);if(!p)return;
+  if(a==='edit')openModal(p);
+  if(a==='print')printSheet(p);
+  if(a==='del'&&confirm('Supprimer définitivement '+p.id+' ('+p.model+') ?')){pcs=pcs.filter(x=>x!==p);save();render()}
+});
+$('#btnExport').onclick=()=>{
+  const b=new Blob([JSON.stringify({version:1,exported:new Date().toISOString(),pcs},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='atelier-pc-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href);
+  toast('Fichier exporté : placez-le dans votre dossier Google Drive');
+};
+$('#btnImport').onclick=()=>$('#fileImport').click();
+$('#fileImport').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result),l=Array.isArray(d)?d:d.pcs;if(!Array.isArray(l))throw 0;
+    if(confirm('Remplacer les '+pcs.length+' PC actuels par les '+l.length+' PC du fichier ?')){pcs=l;save();render();toast('Import terminé')}}
+    catch(x){toast('Fichier JSON invalide.')}e.target.value=''};
+  r.readAsText(f);
+};
+
+buildForm();load();render();
+})();
+</script>
+</body>
+</html>
