@@ -260,7 +260,7 @@ function saveCurrent(){
 function printSheet(p){
   const c=calc(p),row=(a,b)=>`<tr><th>${a}</th><td>${esc(b)||'—'}</td></tr>`;
   const disk=[p.diskState,p.diskType,p.diskSize].filter(Boolean).join(' · '),ram=[p.ramState,p.ramType,p.ramSize].filter(Boolean).join(' · ');
-  $('#sheet').innerHTML=`<div class="top"><div><div>Fiche atelier</div><div class="big">${esc(p.id)}</div></div><div style="text-align:right">Créée le ${new Date(p.created||Date.now()).toLocaleDateString('fr-FR')}<br>Imprimée le ${new Date().toLocaleDateString('fr-FR')}</div></div>
+  $('#sheet').innerHTML=`<div class="top"><div><div>Fiche atelier</div><div class="big">${esc(p.id)} – ${esc(p.model)}</div></div><div style="text-align:right">Créée le ${new Date(p.created||Date.now()).toLocaleDateString('fr-FR')}<br>Imprimée le ${new Date().toLocaleDateString('fr-FR')}</div></div>
   <h3>Machine</h3><table>${row('Modèle',p.model)}${row('Statut',p.status)}${row('Remise en état',p.refurb==='Non'?'Non – pour pièces':'Oui')}</table>
   <h3>Diagnostic</h3><table>${row('Chargeur',p.charger)}${row('Disque dur',disk)}${row('Mémoire RAM',ram)}${row('Batterie',p.battery)}${row('Clavier',p.keyboard)}${row('Test de démarrage',p.boot)}</table>
   <h3>Pièces à commander</h3><table>${(p.parts||[]).length?p.parts.map(x=>`<tr><td>${esc(x.name)}</td><td style="width:90px;text-align:right">${eur(x.cost)}</td></tr>`).join('')+`<tr><th>Total pièces</th><td style="text-align:right"><b>${eur(c.pt)}</b></td></tr>`:'<tr><td>Aucune</td></tr>'}</table>
