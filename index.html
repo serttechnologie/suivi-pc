@@ -331,7 +331,7 @@ function getToken(){return new Promise((res,rej)=>{
 })}
 async function api(url,opt){opt=opt||{};const t=await getToken();
   const r=await fetch(url,{...opt,headers:{Authorization:'Bearer '+t,...(opt.headers||{})}});
-  if(!r.ok){if(r.status===401)tok=null;throw new Error('Drive '+r.status)}return r}
+  if(!r.ok){if(r.status===401)tok=null;let m='';try{m=(await r.json()).error.message}catch(e){}throw new Error('Drive '+r.status+' '+m)}return r}
 async function findFile(){
   if(fileId)return fileId;
   const q=encodeURIComponent("name='"+FILE+"' and trashed=false");
