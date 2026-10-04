@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atelier PC – Suivi de reconditionnement</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{--bg:#edf0f2;--panel:#fff;--ink:#14232b;--mute:#5d6f78;--line:#d4dce1;--brand:#0f5f66;--brand-d:#0a4a50;--acc:#f2b705;--ok:#13804a;--ko:#c2392b;--okbg:#e2f4ea;--kobg:#fbe5e2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--ink);color:#fff;padding:14px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;border-bottom:4px solid var(--acc)}
+header h1{margin:0;font-size:20px;letter-spacing:.2px;flex:1 1 220px}
+header small{display:block;font-weight:400;color:#9db1ba;font-size:12px}
+main{max-width:1200px;margin:20px auto;padding:0 16px}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px}
+button:hover{border-color:var(--brand)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--acc);outline-offset:1px}
+.primary{background:var(--acc);border-color:var(--acc);color:#1b1500;font-weight:700}
+.primary:hover{background:#ffc928}
+header button:not(.primary){background:transparent;color:#fff;border-color:#4b6370}
+.tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.tools input[type=search]{flex:1 1 280px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;font:inherit}
+.count{color:var(--mute);font-size:13px}
+.wrap{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:#f6f8f9;font-size:13px;color:var(--mute);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:#f9fbfb}
+.id{font-weight:700;color:var(--brand)}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:600}
+.s-att{background:#e8ecef;color:#44555e}.s-rep{background:#fff1c7;color:#7a5a00}.s-pret{background:var(--okbg);color:var(--ok)}.s-ven{background:#dbe7f6;color:#25508a}
+.pos{color:var(--ok);font-weight:700}.neg{color:var(--ko);font-weight:700}
+.act button{padding:4px 9px;font-size:13px;margin-right:4px}
+.empty{padding:40px;text-align:center;color:var(--mute)}
+.orders{margin-top:12px;border:2px solid var(--acc);background:#fff9e0;border-radius:8px;padding:10px 12px}.orders>b{display:block;margin-bottom:8px}
+#btnSync[data-s=ok]{border-color:#3fbf7f!important;color:#8be0b2!important}#btnSync[data-s=err]{border-color:#ff8a7a!important;color:#ffb3a8!important}
+.help{font-size:13px;color:var(--mute);padding-left:18px}.help li{margin:4px 0}
+.tools select{padding:10px 12px;border:1px solid var(--line);border-radius:6px;font:inherit;background:#fff}
+.th{border:0;background:none;padding:0;font:inherit;font-weight:600;color:inherit;cursor:pointer}.th[data-d=asc]::after{content:" ▲";font-size:10px}.th[data-d=desc]::after{content:" ▼";font-size:10px}
+tbody tr.sold,tbody tr.sold:hover{background:#dce7f5}tbody tr.sold td:first-child{box-shadow:inset 4px 0 0 #3a6bb0}
+.sub{font-size:12px;color:#4a6a92;font-weight:500}
+/* Modal */
+#modal,#cfg{position:fixed;inset:0;background:rgba(10,20,25,.6);display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:24px 12px;z-index:10}
+#modal.open,#cfg.open{display:flex}
+.card{background:var(--panel);border-radius:10px;width:100%;max-width:820px;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.card>h2{margin:0;padding:16px 22px;border-bottom:1px solid var(--line);font-size:18px;display:flex;justify-content:space-between;align-items:center}
+.body{padding:18px 22px}
+fieldset{border:1px solid var(--line);border-radius:8px;margin:0 0 16px;padding:12px 14px}
+legend{font-weight:700;padding:0 6px;color:var(--brand)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+label{display:block;font-size:13px;color:var(--mute);font-weight:600}
+label input,label select,label textarea{display:block;width:100%;margin-top:4px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font:inherit;color:var(--ink);background:#fff}
+.radios label{display:inline-flex;gap:6px;align-items:center;margin-right:18px;color:var(--ink);font-weight:500}
+.radios input{width:auto;margin:0}
+.parts td{padding:6px 4px;border:0;white-space:normal}
+.parts input{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;font:inherit}
+.fin{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;align-items:end}
+.fin div.k{background:#f6f8f9;border-radius:8px;padding:10px 12px}
+.fin b{display:block;font-size:19px;font-variant-numeric:tabular-nums}
+#profitBox.pos{background:var(--okbg)}#profitBox.neg{background:var(--kobg)}
+.foot{padding:14px 22px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;background:#f6f8f9;border-radius:0 0 10px 10px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:6px;display:none;z-index:20}
+/* Fiche atelier */
+#sheet{display:none}
+@media print{
+  @page{size:A4;margin:12mm}
+  body>*:not(#sheet){display:none!important}
+  body{background:#fff}
+  #sheet{display:block;color:#000;font:13px/1.4 Arial,Helvetica,sans-serif}
+  #sheet .top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:4px solid #000;padding-bottom:8px}
+  #sheet .big{font-size:26px;font-weight:800;letter-spacing:.5px}
+  #sheet h3{margin:16px 0 6px;font-size:14px;background:#000;color:#fff;padding:3px 8px}
+  #sheet table{border:1px solid #000}
+  #sheet th,#sheet td{border:1px solid #000;padding:5px 8px;background:#fff;color:#000;font-size:13px}
+  #sheet th{width:32%;font-weight:700;text-align:left}
+  #sheet .chk span{display:inline-block;margin:6px 24px 6px 0;font-size:14px}
+  #sheet .box{display:inline-block;width:14px;height:14px;border:2px solid #000;vertical-align:middle;margin-right:6px}
+  #sheet .notes{border:1px solid #000;min-height:70px;padding:6px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Atelier PC<small>Suivi de reconditionnement</small></h1>
+  <button id="btnSync">Drive : configurer</button>
+  <button id="btnCfg" title="Réglages Google Drive" aria-label="Réglages Google Drive">⚙</button>
+  <button id="btnExport" title="Télécharge un fichier JSON à ranger dans votre dossier Google Drive synchronisé">Exporter (JSON)</button>
+  <button id="btnImport">Importer</button>
+  <input type="file" id="fileImport" accept="application/json,.json" hidden>
+  <button class="primary" id="btnNew">+ Nouveau PC</button>
+</header>
+<main>
+  <div class="tools">
+    <input type="search" id="search" placeholder="Rechercher par n° de suivi ou modèle…" aria-label="Rechercher">
+    <select id="fStatus" aria-label="Filtrer par statut"></select>
+    <span class="count" id="count"></span>
+  </div>
+  <div class="wrap">
+    <table>
+      <thead><tr><th><button class="th" data-k="id">N° suivi</button></th><th><button class="th" data-k="model">Modèle</button></th><th><button class="th" data-k="status">Statut</button></th><th class="n"><button class="th" data-k="buy">Achat</button></th><th class="n"><button class="th" data-k="pt">Pièces</button></th><th class="n"><button class="th" data-k="cost">Revient</button></th><th class="n"><button class="th" data-k="sale">Prix vente</button></th><th class="n"><button class="th" data-k="profit">Bénéfice</button></th><th></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty" id="empty" hidden></div>
+  </div>
+  <p class="count" id="saveInfo"></p>
+</main>
+
+<div id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="card">
+    <h2><span id="mTitle"></span><button id="mClose" aria-label="Fermer">✕</button></h2>
+    <div class="body">
+      <fieldset><legend>Informations générales</legend>
+        <div class="grid">
+          <label>Modèle du PC<input id="model" placeholder="ex : Dell Latitude 5490"></label>
+          <label>Statut<select id="status"></select></label>
+          <label>Prix d'achat (€)<input id="buy" type="number" min="0" step="0.01" value="0"></label>
+        </div>
+      </fieldset>
+      <fieldset id="soldBox" hidden><legend>Informations de vente</legend>
+        <div class="grid">
+          <label>Prix de vente réel (€)<input id="soldPrice" type="number" min="0" step="0.01"></label>
+          <label>Date de vente<input id="soldDate" type="date"></label>
+          <label>Plateforme ou remise en main propre<input id="soldChannel" list="plats" placeholder="Choisir ou écrire"></label>
+        </div>
+        <datalist id="plats"><option value="Remise en main propre"><option value="Leboncoin"><option value="eBay"><option value="Vinted"><option value="Back Market"><option value="Facebook Marketplace"><option value="Boutique"></datalist>
+      </fieldset>
+      <fieldset><legend>Diagnostic</legend>
+        <div class="grid" id="diag"></div>
+        <div id="orders"></div>
+        <div class="radios" style="margin-top:12px"><b style="font-size:13px;color:var(--mute)">Remise en état : </b>
+          <label><input type="radio" name="refurb" value="Oui" checked> Oui</label>
+          <label><input type="radio" name="refurb" value="Non"> Non (pour pièces)</label>
+        </div>
+        <label style="margin-top:10px">Notes<textarea id="notes" rows="2"></textarea></label>
+      </fieldset>
+      <fieldset><legend>Pièces à acheter</legend>
+        <table class="parts"><tbody id="parts"></tbody></table>
+        <button id="addPart" type="button" style="margin-top:6px">+ Ajouter une pièce</button>
+      </fieldset>
+      <fieldset><legend>Rentabilité</legend>
+        <div class="fin">
+          <div class="k">Total pièces<b id="tParts"></b></div>
+          <div class="k">Coût de revient<b id="tCost"></b></div>
+          <label>Prix de vente estimé (€)<input id="sale" type="number" min="0" step="0.01" value="0"></label>
+          <div class="k" id="profitBox">Bénéfice net prévisionnel<b id="tProfit"></b></div>
+        </div>
+      </fieldset>
+    </div>
+    <div class="foot">
+      <button id="mPrint">Imprimer la Fiche Atelier</button>
+      <button id="mCancel">Annuler</button>
+      <button class="primary" id="mSave">Enregistrer</button>
+    </div>
+  </div>
+</div>
+<div id="cfg" role="dialog" aria-modal="true"><div class="card" style="max-width:600px">
+  <h2>Synchronisation Google Drive<button id="cfgClose" aria-label="Fermer">✕</button></h2>
+  <div class="body">
+    <p class="help" style="padding:0">L'application garde un fichier <b>atelier-pc.json</b> dans votre Drive et le fusionne entre vos appareils. Configuration à faire une seule fois :</p>
+    <ol class="help">
+      <li>Sur <b>console.cloud.google.com</b>, créez un projet puis activez <b>Google Drive API</b> (API et services → Bibliothèque).</li>
+      <li>Écran de consentement OAuth : type <b>Externe</b>, puis ajoutez votre adresse Gmail dans « Utilisateurs test ».</li>
+      <li>Identifiants → Créer → <b>ID client OAuth</b> → Application Web. Dans « Origines JavaScript autorisées », ajoutez l'adresse de votre site (ex : https://votrenom.github.io).</li>
+      <li>Collez l'ID client ci-dessous. Utilisez le même sur chaque appareil.</li>
+    </ol>
+    <label>ID client OAuth<input id="cid" placeholder="123456-abc.apps.googleusercontent.com"></label>
+  </div>
+  <div class="foot"><button id="cfgOff">Déconnecter Drive</button><button class="primary" id="cfgSave">Enregistrer et connecter</button></div>
+</div></div>
+<div id="sheet"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+const KEY='atelier_pc_v1';
+const STATUS=['En attente','En réparation','Prêt à la vente','Vendu'];
+const SCLASS={'En attente':'s-att','En réparation':'s-rep','Prêt à la vente':'s-pret','Vendu':'s-ven'};
+const DIAG=[
+  ['cpu','Processeur',null,'ex : Core i5-8350U'],
+  ['charger','Chargeur',['Fonctionnel','Non testé','HS','Absent']],
+  ['diskState','Disque dur – état',['Bon','Usé','HS','Absent']],
+  ['diskType','Disque dur – type',['SSD SATA','NVMe','HDD','eMMC','Aucun']],
+  ['diskSize','Disque dur – capacité',null,'ex : 256 Go'],
+  ['ramState','RAM – état',['Bonne','Défaut','HS','Absente']],
+  ['ramType','RAM – type',['DDR3','DDR3L','DDR4','DDR5','LPDDR4/5 (soudée)']],
+  ['ramSize','RAM – capacité',null,'ex : 8 Go'],
+  ['battery','Batterie',['Bonne','Usée','HS','Absente']],
+  ['batteryPct','Batterie – état (%)','num','0 à 100'],
+  ['keyboard','Clavier',['Bon','Touches défectueuses','HS','Absent']],
+  ['boot','Test de démarrage effectué ?',['Non','Oui – démarre','Oui – ne démarre pas']],
+  ['windows','Windows installé ?',['Non','Oui']]
+];
+const $=s=>document.querySelector(s);
+const eur=n=>(+n||0).toLocaleString('fr-FR',{style:'currency',currency:'EUR'});
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let pcs=[],editing=null,parts=[],orders={};const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+
+function normalize(){if(!Array.isArray(pcs))pcs=[];pcs.forEach(p=>{p.uid=p.uid||uid();p.updatedAt=p.updatedAt||p.created||'1970-01-01T00:00:00.000Z'})}
+function load(){try{pcs=JSON.parse(localStorage.getItem(KEY))||[]}catch(e){pcs=[]}normalize()}
+function save(){saveLocal();scheduleSync()}
+function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify(pcs));$('#saveInfo').textContent='Sauvegarde automatique dans ce navigateur · '+new Date().toLocaleTimeString('fr-FR')+' · pensez à exporter régulièrement le fichier JSON.'}catch(e){toast('Sauvegarde locale impossible : exportez vos données.')}}
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',2600)}
+function calc(p){const pt=(p.parts||[]).reduce((s,x)=>s+(+x.cost||0),0),cost=(+p.buy||0)+pt;return{pt,cost,profit:salePrice(p)-cost}}
+function nextId(){const y=new Date().getFullYear(),re=new RegExp('^PC-'+y+'-(\\d+)$');let m=0;pcs.forEach(p=>{const r=re.exec(p.id);if(r)m=Math.max(m,+r[1])});return'PC-'+y+'-'+String(m+1).padStart(3,'0')}
+
+function salePrice(p){return p.status==='Vendu'&&p.soldPrice!==''&&p.soldPrice!=null?+p.soldPrice:(+p.sale||0)}
+let sortK='',sortD=1;
+const SORT={id:p=>p.id,model:p=>(p.model||'').toLowerCase(),status:p=>STATUS.indexOf(p.status),buy:p=>+p.buy||0,pt:p=>calc(p).pt,cost:p=>calc(p).cost,sale:salePrice,profit:p=>calc(p).profit};
+function render(){
+  const q=$('#search').value.trim().toLowerCase(),f=$('#fStatus').value;
+  const all=pcs.filter(p=>!p.del),
+    list=all.filter(p=>(!q||p.id.toLowerCase().includes(q)||(p.model||'').toLowerCase().includes(q))&&(!f||(f==='_stock'?p.status!=='Vendu':p.status===f)));
+  list.sort((a,b)=>{const sa=a.status==='Vendu',sb=b.status==='Vendu';if(sa!==sb)return sa-sb;
+    if(!sortK)return(b.created||'')>(a.created||'')?1:-1;
+    const x=SORT[sortK](a),y=SORT[sortK](b);return(x>y?1:x<y?-1:0)*sortD});
+  document.querySelectorAll('.th').forEach(t=>t.dataset.d=t.dataset.k===sortK?(sortD>0?'asc':'desc'):'');
+  $('#rows').innerHTML=list.map(p=>{const c=calc(p),v=p.status==='Vendu';return`<tr class="${v?'sold':''}" data-id="${esc(p.id)}">
+    <td class="id">${esc(p.id)}</td><td>${esc(p.model)}${v?`<div class="sub">Vendu${p.soldDate?' le '+p.soldDate.split('-').reverse().join('/'):''}${p.soldChannel?' · '+esc(p.soldChannel):''}</div>`:''}</td>
+    <td><span class="badge ${SCLASS[p.status]||''}">${esc(p.status)}</span></td>
+    <td class="n">${eur(p.buy)}</td><td class="n">${eur(c.pt)}</td><td class="n">${eur(c.cost)}</td><td class="n">${eur(salePrice(p))}</td>
+    <td class="n ${c.profit>=0?'pos':'neg'}">${eur(c.profit)}</td>
+    <td class="act"><button data-a="edit">Modifier</button><button data-a="print">Fiche</button><button data-a="del">Supprimer</button></td></tr>`}).join('');
+  const e=$('#empty');e.hidden=list.length>0;
+  e.textContent=all.length?'Aucun PC ne correspond à votre recherche.':'Aucun PC enregistré. Cliquez sur « + Nouveau PC » pour commencer.';
+  $('#count').textContent=list.length+' / '+all.length+' PC';
+}
+
+function buildForm(){
+  $('#fStatus').innerHTML='<option value="">Tous les statuts</option><option value="_stock">En stock (hors vendus)</option>'+STATUS.map(s=>'<option>'+s+'</option>').join('');
+  $('#status').innerHTML=STATUS.map(s=>`<option>${s}</option>`).join('');
+  $('#diag').innerHTML=DIAG.map(d=>Array.isArray(d[2])?`<label>${d[1]}<select id="${d[0]}">${d[2].map(o=>`<option>${o}</option>`).join('')}</select></label>`:`<label>${d[1]}<input id="${d[0]}"${d[2]?' type="number" min="0" max="100"':''} placeholder="${d[3]}"></label>`).join('');
+}
+function renderParts(){
+  $('#parts').innerHTML=parts.length?parts.map((x,i)=>`<tr><td><input data-i="${i}" data-k="name" value="${esc(x.name)}" placeholder="Pièce (ex : batterie, SSD 256 Go)"></td><td style="width:130px"><input data-i="${i}" data-k="cost" type="number" min="0" step="0.01" value="${+x.cost||0}" aria-label="Coût estimé"></td><td style="width:40px"><button type="button" data-del="${i}" aria-label="Supprimer la pièce">✕</button></td></tr>`).join(''):'<tr><td style="color:var(--mute)">Aucune pièce à commander.</td></tr>';
+  totals();
+}
+function totals(){
+  const pt=parts.reduce((s,x)=>s+(+x.cost||0),0),cost=(+$('#buy').value||0)+pt,pr=($('#status').value==='Vendu'&&$('#soldPrice').value!==''?+$('#soldPrice').value:(+$('#sale').value||0))-cost;
+  $('#tParts').textContent=eur(pt);$('#tCost').textContent=eur(cost);$('#tProfit').textContent=eur(pr);
+  $('#profitBox').className='k '+(pr>=0?'pos':'neg');
+}
+const COMP=[['charger','charger','Chargeur'],['disk','diskState','Disque dur'],['ram','ramState','Mémoire RAM'],['battery','battery','Batterie'],['keyboard','keyboard','Clavier']];
+const missing=v=>/^(Absent|Absente|HS)$/.test(v);
+function renderOrders(){
+  const h=COMP.filter(c=>missing($('#'+c[1]).value)).map(c=>{if(!orders[c[0]])orders[c[0]]='Oui';
+    return`<label>${c[2]} : ${$('#'+c[1]).value.toLowerCase()} – commander la pièce ?<select data-ord="${c[0]}"><option${orders[c[0]]==='Oui'?' selected':''}>Oui</option><option${orders[c[0]]==='Non'?' selected':''}>Non</option></select></label>`}).join('');
+  $('#orders').innerHTML=h?`<div class="orders"><b>Pièces manquantes ou HS</b><div class="grid">${h}</div></div>`:'';
+}
+function syncOrders(){
+  COMP.forEach(c=>{const v=$('#'+c[1]).value;
+    if(!missing(v)){delete orders[c[0]];parts=parts.filter(x=>x.src!==c[0]);return}
+    if(!orders[c[0]])orders[c[0]]='Oui';
+    const has=parts.find(x=>x.src===c[0]),name=c[2]+' ('+v.toLowerCase()+')';
+    if(orders[c[0]]==='Oui'){if(has)has.name=name;else parts.push({src:c[0],name,cost:0})}
+    else parts=parts.filter(x=>x.src!==c[0]);
+  });
+  renderOrders();renderParts();
+}
+function toggleSold(focus){
+  const v=$('#status').value==='Vendu';$('#soldBox').hidden=!v;
+  if(v){if($('#soldPrice').value==='')$('#soldPrice').value=+$('#sale').value?$('#sale').value:'';
+    if(!$('#soldDate').value)$('#soldDate').value=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+    if(focus)$('#soldPrice').focus()}
+  totals();
+}
+function openModal(p){
+  editing=p?p.id:null;
+  $('#mTitle').textContent=p?'Fiche '+p.id:'Nouveau PC – '+nextId();
+  const d=p||{model:'',status:STATUS[0],buy:0,sale:0,refurb:'Oui',notes:'',parts:[]};
+  $('#model').value=d.model;$('#status').value=d.status;$('#buy').value=d.buy;$('#sale').value=d.sale;$('#notes').value=d.notes||'';$('#soldPrice').value=d.soldPrice??'';$('#soldDate').value=d.soldDate||'';$('#soldChannel').value=d.soldChannel||'';
+  DIAG.forEach(x=>{const el=$('#'+x[0]);if(d[x[0]]!=null)el.value=d[x[0]];else el.selectedIndex=0;if((!x[2]||x[2]==='num')&&d[x[0]]==null)el.value=''});
+  document.querySelector('input[name=refurb][value='+(d.refurb||'Oui')+']').checked=true;
+  parts=(d.parts||[]).map(x=>({...x}));orders={...(d.orders||{})};renderOrders();renderParts();toggleSold(false);
+  $('#modal').classList.add('open');$('#model').focus();
+}
+function closeModal(){$('#modal').classList.remove('open')}
+function collect(){
+  const o={model:$('#model').value.trim(),status:$('#status').value,buy:+$('#buy').value||0,sale:+$('#sale').value||0,notes:$('#notes').value.trim(),
+    refurb:document.querySelector('input[name=refurb]:checked').value,orders:{...orders},parts:parts.filter(x=>x.name.trim()||+x.cost)};
+  DIAG.forEach(x=>o[x[0]]=$('#'+x[0]).value.trim());
+  if(o.status==='Vendu'){o.soldPrice=$('#soldPrice').value;o.soldDate=$('#soldDate').value;o.soldChannel=$('#soldChannel').value.trim()}else{o.soldPrice=o.soldDate=o.soldChannel=''}
+  return o;
+}
+function saveCurrent(){
+  const o=collect();if(!o.model){toast('Indiquez le modèle du PC.');$('#model').focus();return null}
+  if(o.status==='Vendu'&&(o.soldPrice===''||!o.soldDate||!o.soldChannel)){toast('Indiquez le prix, la date et la plateforme de la vente.');return null}
+  o.updatedAt=new Date().toISOString();
+  if(editing){const i=pcs.findIndex(p=>p.id===editing&&!p.del);o.id=editing;o.uid=pcs[i].uid;o.created=pcs[i].created;pcs[i]=o}
+  else{o.id=nextId();o.uid=uid();o.created=o.updatedAt;pcs.unshift(o);editing=o.id;$('#mTitle').textContent='Fiche '+o.id}
+  save();render();return o;
+}
+
+function printSheet(p){
+  const c=calc(p),row=(a,b)=>`<tr><th>${a}</th><td>${esc(b)||'—'}</td></tr>`;
+  const disk=[p.diskState,p.diskType,p.diskSize].filter(Boolean).join(' · '),ram=[p.ramState,p.ramType,p.ramSize].filter(Boolean).join(' · ');
+  $('#sheet').innerHTML=`<div class="top"><div><div>Fiche atelier</div><div class="big">${esc(p.id)} – ${esc(p.model)}</div></div><div style="text-align:right">Créée le ${new Date(p.created||Date.now()).toLocaleDateString('fr-FR')}<br>Imprimée le ${new Date().toLocaleDateString('fr-FR')}</div></div>
+  <h3>Machine</h3><table>${row('Modèle',p.model)}${row('Statut',p.status)}${row('Remise en état',p.refurb==='Non'?'Non – pour pièces':'Oui')}</table>
+  <h3>Diagnostic</h3><table>${row('Processeur',p.cpu)}${row('Chargeur',p.charger)}${row('Disque dur',disk)}${row('Mémoire RAM',ram)}${row('Batterie',[p.battery,p.batteryPct?p.batteryPct+' %':''].filter(Boolean).join(' · '))}${row('Clavier',p.keyboard)}${row('Test de démarrage',p.boot)}${row('Windows installé',p.windows)}</table>
+  <h3>Pièces à commander</h3><table>${(p.parts||[]).length?p.parts.map(x=>`<tr><td>${esc(x.name)}</td><td style="width:90px;text-align:right">${eur(x.cost)}</td></tr>`).join('')+`<tr><th>Total pièces</th><td style="text-align:right"><b>${eur(c.pt)}</b></td></tr>`:'<tr><td>Aucune</td></tr>'}</table>
+  <h3>Finances</h3><table>${row('Prix d\'achat',eur(p.buy))}${row('Coût de revient',eur(c.cost))}${row('Prix de vente estimé',eur(p.sale))}${row('Bénéfice prévisionnel',eur(c.profit))}</table>
+  <h3>Contrôles</h3><div class="chk"><span><i class="box"></i>Nettoyage</span><span><i class="box"></i>Pièces posées</span><span><i class="box"></i>OS installé</span><span><i class="box"></i>Test final</span><span><i class="box"></i>Photos</span></div>
+  <h3>Mises à jour effectuées</h3><div class="notes" style="min-height:60px"></div>
+  <h3>Notes</h3><div class="notes">${esc(p.notes)}</div>`;
+  setTimeout(()=>window.print(),50);
+}
+
+/* Événements */
+$('#search').addEventListener('input',render);
+$('#btnNew').onclick=()=>openModal();
+$('#mClose').onclick=$('#mCancel').onclick=closeModal;
+$('#modal').addEventListener('mousedown',e=>{if(e.target.id==='modal')closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+$('#mSave').onclick=()=>{if(saveCurrent()){closeModal();toast('Enregistré')}};
+$('#mPrint').onclick=()=>{const o=saveCurrent();if(o)printSheet(o)};
+$('#addPart').onclick=()=>{parts.push({name:'',cost:0});renderParts();const i=document.querySelectorAll('#parts input[data-k=name]');i[i.length-1].focus()};
+$('#parts').addEventListener('input',e=>{const t=e.target;if(t.dataset.i==null)return;parts[t.dataset.i][t.dataset.k]=t.dataset.k==='cost'?(+t.value||0):t.value;totals()});
+$('#parts').addEventListener('click',e=>{const i=e.target.dataset.del;if(i!=null){const x=parts.splice(i,1)[0];if(x&&x.src){orders[x.src]='Non';renderOrders()}renderParts()}});
+$('#buy').oninput=$('#sale').oninput=$('#soldPrice').oninput=totals;
+$('#rows').addEventListener('click',e=>{
+  const a=e.target.dataset.a;if(!a)return;
+  const p=pcs.find(x=>x.id===e.target.closest('tr').dataset.id);if(!p)return;
+  if(a==='edit')openModal(p);
+  if(a==='print')printSheet(p);
+  if(a==='del'&&confirm('Supprimer définitivement '+p.id+' ('+p.model+') ?')){p.del=1;p.updatedAt=new Date().toISOString();save();render()}
+});
+$('#btnExport').onclick=()=>{
+  const b=new Blob([JSON.stringify({version:1,exported:new Date().toISOString(),pcs},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='atelier-pc-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href);
+  toast('Fichier exporté : placez-le dans votre dossier Google Drive');
+};
+$('#btnImport').onclick=()=>$('#fileImport').click();
+$('#fileImport').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result),l=Array.isArray(d)?d:d.pcs;if(!Array.isArray(l))throw 0;
+    if(confirm('Fusionner les '+l.length+' PC du fichier avec vos données actuelles ?')){mergeIn(l);save();render();toast('Import terminé')}}
+    catch(x){toast('Fichier JSON invalide.')}e.target.value=''};
+  r.readAsText(f);
+};
+
+$('#diag').addEventListener('change',syncOrders);
+$('#status').addEventListener('change',()=>toggleSold(true));
+$('#fStatus').addEventListener('change',render);
+document.querySelector('thead').addEventListener('click',e=>{const k=e.target.dataset.k;if(!k)return;if(sortK===k)sortD=-sortD;else{sortK=k;sortD=1}render()});
+$('#orders').addEventListener('change',e=>{const k=e.target.dataset.ord;if(k){orders[k]=e.target.value;syncOrders()}});
+
+/* Synchronisation Google Drive (fichier atelier-pc.json) */
+const LS=k=>localStorage.getItem(k),FILE='atelier-pc.json',cid=()=>LS('atelier_drive_cid')||'';
+let tok=null,tokExp=0,syncTimer=null,busy=false,fileId=LS('atelier_drive_file')||'';
+const tokOk=()=>tok&&Date.now()<tokExp;
+function setSync(t,c){const b=$('#btnSync');b.textContent=t;b.dataset.s=c||''}
+function initDrive(){setSync(!cid()?'Drive : configurer':LS('atelier_drive_on')?'Drive : reconnecter':'Drive : connecter')}
+function mergeIn(list){
+  const fresh=[];
+  list.forEach(r=>{if(!r||!r.id)return;
+    if(!r.uid){const m=pcs.find(p=>p.id===r.id&&p.created===r.created);r.uid=m?m.uid:uid()}
+    r.updatedAt=r.updatedAt||r.created||'1970-01-01T00:00:00.000Z';
+    const i=pcs.findIndex(p=>p.uid===r.uid);
+    if(i>=0){if(r.updatedAt>pcs[i].updatedAt)pcs[i]=r}else fresh.push(r)});
+  fresh.forEach(r=>{if(pcs.some(p=>p.id===r.id)){r.id=nextId();r.updatedAt=new Date().toISOString()}pcs.push(r)});
+  pcs.sort((a,b)=>(b.created||'')>(a.created||'')?1:-1);
+}
+function getToken(){return new Promise((res,rej)=>{
+  if(tokOk())return res(tok);
+  if(!window.google||!google.accounts)return rej(new Error('script Google non chargé (hors ligne ?)'));
+  google.accounts.oauth2.initTokenClient({client_id:cid(),scope:'https://www.googleapis.com/auth/drive.file',prompt:LS('atelier_drive_on')?'':'consent',
+    callback:r=>{if(r.error)return rej(new Error(r.error));tok=r.access_token;tokExp=Date.now()+(r.expires_in-60)*1000;localStorage.setItem('atelier_drive_on','1');res(tok)},
+    error_callback:e=>rej(new Error(e.type||'fenêtre fermée'))}).requestAccessToken();
+})}
+async function api(url,opt){opt=opt||{};const t=await getToken();
+  const r=await fetch(url,{...opt,headers:{Authorization:'Bearer '+t,...(opt.headers||{})}});
+  if(!r.ok){if(r.status===401)tok=null;let m='';try{m=(await r.json()).error.message}catch(e){}throw new Error('Drive '+r.status+' '+m)}return r}
+async function findFile(){
+  if(fileId)return fileId;
+  const q=encodeURIComponent("name='"+FILE+"' and trashed=false");
+  const j=await(await api('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id)&orderBy=createdTime')).json();
+  if(j.files&&j.files[0]){fileId=j.files[0].id;localStorage.setItem('atelier_drive_file',fileId)}
+  return fileId;
+}
+const body=()=>JSON.stringify({version:2,updated:new Date().toISOString(),pcs},null,1);
+async function upload(){
+  if(fileId){await api('https://www.googleapis.com/upload/drive/v3/files/'+fileId+'?uploadType=media',{method:'PATCH',headers:{'Content-Type':'application/json'},body:body()});return}
+  const b='atelier_b',mp='--'+b+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify({name:FILE,mimeType:'application/json'})+'\r\n--'+b+'\r\nContent-Type: application/json\r\n\r\n'+body()+'\r\n--'+b+'--';
+  const j=await(await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+b},body:mp})).json();
+  fileId=j.id;localStorage.setItem('atelier_drive_file',fileId);
+}
+async function syncNow(){
+  if(busy)return;busy=true;setSync('Drive : synchronisation…','');
+  try{
+    const id=await findFile();
+    if(id){const d=await(await api('https://www.googleapis.com/drive/v3/files/'+id+'?alt=media')).json();mergeIn(Array.isArray(d)?d:(d.pcs||[]));saveLocal();render()}
+    await upload();
+    setSync('Drive : synchronisé '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),'ok');
+  }catch(e){
+    if(/404/.test(e.message)){fileId='';localStorage.removeItem('atelier_drive_file')}
+    setSync('Drive : erreur, réessayer','err');toast('Synchronisation Drive impossible : '+e.message);
+  }
+  busy=false;
+}
+function scheduleSync(){
+  if(!LS('atelier_drive_on')||!cid())return;clearTimeout(syncTimer);
+  if(!tokOk()){setSync('Drive : reconnecter pour synchroniser','err');return}
+  syncTimer=setTimeout(syncNow,2500);
+}
+$('#btnSync').onclick=async()=>{
+  if(!cid()){$('#cfg').classList.add('open');return}
+  try{await getToken();await syncNow()}catch(e){setSync('Drive : erreur, réessayer','err');toast('Connexion Drive impossible : '+e.message)}
+};
+$('#btnCfg').onclick=()=>{$('#cid').value=cid();$('#cfg').classList.add('open')};
+$('#cfgClose').onclick=()=>$('#cfg').classList.remove('open');
+$('#cfgSave').onclick=()=>{const v=$('#cid').value.trim();if(!v){toast('Collez votre ID client.');return}
+  localStorage.setItem('atelier_drive_cid',v);tok=null;$('#cfg').classList.remove('open');$('#btnSync').click()};
+$('#cfgOff').onclick=()=>{['atelier_drive_cid','atelier_drive_file','atelier_drive_on'].forEach(k=>localStorage.removeItem(k));tok=null;fileId='';$('#cfg').classList.remove('open');initDrive()};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&tokOk())syncNow()});
+
+buildForm();load();render();initDrive();
+})();
+</script>
+</body>
+</html>
