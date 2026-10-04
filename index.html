@@ -346,7 +346,7 @@ document.querySelector('thead').addEventListener('click',e=>{const k=e.target.da
 $('#orders').addEventListener('change',e=>{const k=e.target.dataset.ord;if(k){orders[k]=e.target.value;syncOrders()}});
 
 /* Synchronisation Google Drive (fichier atelier-pc.json) */
-const LS=k=>localStorage.getItem(k),FILE='atelier-pc.json',cid=()=>LS('atelier_drive_cid')||'';
+const LS=k=>localStorage.getItem(k),FILE='atelier-pc.json',cid=()=>'28818252203-b47k3relsles1fbsia4552gvfhuhqnu1.apps.googleusercontent.com';
 let tok=null,tokExp=0,syncTimer=null,busy=false,fileId=LS('atelier_drive_file')||'';
 const tokOk=()=>tok&&Date.now()<tokExp;
 function setSync(t,c){const b=$('#btnSync');b.textContent=t;b.dataset.s=c||''}
