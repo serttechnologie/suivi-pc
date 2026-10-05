@@ -52,6 +52,10 @@ tbody tr.sold,tbody tr.sold:hover{background:#dce7f5}tbody tr.sold td:first-chil
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto}.panel h3{margin:0 0 10px;font-size:15px}
 .bar{display:grid;grid-template-columns:150px 1fr 95px;gap:8px;align-items:center;margin:7px 0;font-size:13px}
 .bar i{display:block;height:14px;border-radius:3px;background:var(--brand);min-width:2px}.bar i.n{background:var(--ko)}.bar em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums}
+summary{cursor:pointer;font-weight:600;margin-bottom:6px}
+tr.grp td{background:#e3ecee;color:var(--brand-d);font-weight:700;padding:6px 12px}tbody tr.grp:hover{background:none}
+.grpl{display:flex;gap:6px;align-items:center;font-size:14px;color:var(--ink);font-weight:500;white-space:nowrap}.grpl input{width:auto;margin:0}
+.mid{color:#a86f00;font-weight:700}
 /* Modal */
 #modal,#cfg{position:fixed;inset:0;background:rgba(10,20,25,.6);display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:24px 12px;z-index:10}
 #modal.open,#cfg.open{display:flex}
@@ -108,11 +112,12 @@ label input,label select,label textarea{display:block;width:100%;margin-top:4px;
   <div class="tools">
     <input type="search" id="search" placeholder="Rechercher par n° de suivi ou modèle…" aria-label="Rechercher">
     <select id="fStatus" aria-label="Filtrer par statut"></select>
+    <label class="grpl"><input type="checkbox" id="grp" checked> Grouper par modèle</label>
     <span class="count" id="count"></span>
   </div>
   <div class="wrap">
     <table>
-      <thead><tr><th><button class="th" data-k="id">N° suivi</button></th><th><button class="th" data-k="model">Modèle</button></th><th><button class="th" data-k="status">Statut</button></th><th class="n"><button class="th" data-k="buy">Achat</button></th><th class="n"><button class="th" data-k="pt">Pièces</button></th><th class="n"><button class="th" data-k="cost">Revient</button></th><th class="n"><button class="th" data-k="sale">Prix vente</button></th><th class="n"><button class="th" data-k="profit">Bénéfice</button></th><th><button class="th" data-k="delay">Délai</button></th><th></th></tr></thead>
+      <thead><tr><th><button class="th" data-k="id">N° suivi</button></th><th><button class="th" data-k="model">Modèle</button></th><th><button class="th" data-k="status">Statut</button></th><th><button class="th" data-k="bat">Batterie</button></th><th class="n"><button class="th" data-k="buy">Achat</button></th><th class="n"><button class="th" data-k="pt">Pièces</button></th><th class="n"><button class="th" data-k="cost">Revient</button></th><th class="n"><button class="th" data-k="sale">Prix vente</button></th><th class="n"><button class="th" data-k="profit">Bénéfice</button></th><th><button class="th" data-k="delay">Délai</button></th><th></th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
     <div class="empty" id="empty" hidden></div>
@@ -176,14 +181,14 @@ label input,label select,label textarea{display:block;width:100%;margin-top:4px;
 <div id="cfg" role="dialog" aria-modal="true"><div class="card" style="max-width:600px">
   <h2>Synchronisation Google Drive<button id="cfgClose" aria-label="Fermer">✕</button></h2>
   <div class="body">
-    <p class="help" style="padding:0">L'application garde un fichier <b>atelier-pc.json</b> dans votre Drive et le fusionne entre vos appareils. Configuration à faire une seule fois :</p>
+    <details><summary>Comment obtenir l'ID client (une seule fois) ?</summary>
     <ol class="help">
       <li>Sur <b>console.cloud.google.com</b>, créez un projet puis activez <b>Google Drive API</b> (API et services → Bibliothèque).</li>
       <li>Écran de consentement OAuth : type <b>Externe</b>, puis ajoutez votre adresse Gmail dans « Utilisateurs test ».</li>
       <li>Identifiants → Créer → <b>ID client OAuth</b> → Application Web. Dans « Origines JavaScript autorisées », ajoutez l'adresse de votre site (ex : https://votrenom.github.io).</li>
       <li>Collez l'ID client ci-dessous. Utilisez le même sur chaque appareil.</li>
-    </ol>
-    <label>ID client OAuth<input id="cid" placeholder="123456-abc.apps.googleusercontent.com"></label>
+    </ol></details>
+    <label style="margin-top:12px">ID client OAuth<input id="cid" placeholder="123456-abc.apps.googleusercontent.com"></label>
   </div>
   <div class="foot"><button id="cfgOff">Déconnecter Drive</button><button class="primary" id="cfgSave">Enregistrer et connecter</button></div>
 </div></div>
@@ -192,6 +197,7 @@ label input,label select,label textarea{display:block;width:100%;margin-top:4px;
 
 <script>
 (function(){
+const CLIENT_ID='';  // ← COLLEZ ICI votre ID client Google, entre les guillemets (une seule fois)
 const KEY='atelier_pc_v1';
 const STATUS=['En attente','En réparation','Prêt à la vente','Vendu','Vendu pour pièces'];
 const isSold=s=>s==='Vendu'||s==='Vendu pour pièces';
@@ -255,20 +261,25 @@ function dash(){
   <div class="panels"><div class="panel"><h3>PC par statut</h3>${bars}</div><div class="panel"><h3>Bénéfice par mois (6 derniers mois)</h3>${months}</div>
   <div class="panel"><h3>Ventes par plateforme</h3>${rows?`<table><thead><tr><th>Canal</th><th class="n">Ventes</th><th class="n">CA</th><th class="n">Bénéfice</th></tr></thead><tbody>${rows}</tbody></table>`:'<p class="count">Aucune vente pour le moment.</p>'}</div></div>`;
 }
+function batCell(p){const n=p.batteryPct;if(n===''||n==null)return'<span class="sub">—</span>';const v=+n;return`<b class="${v>=80?'pos':v>=50?'mid':'neg'}">${v} %</b>`}
 function salePrice(p){return isSold(p.status)&&p.soldPrice!==''&&p.soldPrice!=null?+p.soldPrice:(+p.sale||0)}
 let sortK='',sortD=1;
-const SORT={id:p=>p.id,model:p=>(p.model||'').toLowerCase(),status:p=>STATUS.indexOf(p.status),buy:p=>(+p.buy||0)+(+p.ship||0),pt:p=>calc(p).pt,cost:p=>calc(p).cost,sale:salePrice,profit:p=>calc(p).profit,delay:p=>{const d=delayOf(p);return d==null?-1:d}};
+const SORT={id:p=>p.id,model:p=>(p.model||'').toLowerCase(),status:p=>STATUS.indexOf(p.status),buy:p=>(+p.buy||0)+(+p.ship||0),pt:p=>calc(p).pt,cost:p=>calc(p).cost,sale:salePrice,profit:p=>calc(p).profit,delay:p=>{const d=delayOf(p);return d==null?-1:d},bat:p=>p.batteryPct===''||p.batteryPct==null?-1:+p.batteryPct};
 function render(){
   const q=$('#search').value.trim().toLowerCase(),f=$('#fStatus').value;
   const all=pcs.filter(p=>!p.del),
     list=all.filter(p=>(!q||p.id.toLowerCase().includes(q)||(p.model||'').toLowerCase().includes(q))&&(!f||(f==='_stock'?!isSold(p.status):p.status===f)));
+  const g=$('#grp').checked,nm=p=>(p.model||'').trim().toLowerCase();
   list.sort((a,b)=>{const sa=isSold(a.status),sb=isSold(b.status);if(sa!==sb)return sa-sb;
+    if(g&&nm(a)!==nm(b))return nm(a)<nm(b)?-1:1;
     if(!sortK)return(b.created||'')>(a.created||'')?1:-1;
     const x=SORT[sortK](a),y=SORT[sortK](b);return(x>y?1:x<y?-1:0)*sortD});
   document.querySelectorAll('.th').forEach(t=>t.dataset.d=t.dataset.k===sortK?(sortD>0?'asc':'desc'):'');
-  $('#rows').innerHTML=list.map(p=>{const c=calc(p),v=isSold(p.status);return`<tr class="${v?'sold':''}" data-id="${esc(p.id)}">
+  let last='';
+  $('#rows').innerHTML=list.map(p=>{const c=calc(p),v=isSold(p.status),key=(v?'1':'0')+nm(p);const hd=g&&key!==last?(last=key,`<tr class="grp"><td colspan="11">${esc(p.model||'Sans modèle')} · ${list.filter(x=>isSold(x.status)===v&&nm(x)===nm(p)).length} PC${v?' vendu(s)':''}</td></tr>`):'';return`${hd}<tr class="${v?'sold':''}" data-id="${esc(p.id)}">
     <td class="id">${esc(p.id)}</td><td>${esc(p.model)}${v?`<div class="sub">Vendu${p.soldDate?' le '+p.soldDate.split('-').reverse().join('/'):''}${p.soldChannel?' · '+esc(p.soldChannel):''}</div>`:''}</td>
     <td><span class="badge ${SCLASS[p.status]||''}">${esc(p.status)}</span></td>
+    <td>${batCell(p)}</td>
     <td class="n">${eur((+p.buy||0)+(+p.ship||0))}</td><td class="n">${eur(c.pt)}</td><td class="n">${eur(c.cost)}</td><td class="n">${eur(salePrice(p))}</td>
     <td class="n ${c.profit>=0?'pos':'neg'}">${eur(c.profit)}</td>
     <td>${delayOf(p)==null?'—':v?fmtDays(delayOf(p)):'<span class="sub">en stock depuis '+fmtDays(delayOf(p))+'</span>'}</td>
@@ -394,16 +405,25 @@ $('#fileImport').onchange=e=>{
 $('#diag').addEventListener('change',syncOrders);
 $('#status').addEventListener('change',()=>toggleSold(true));
 $('#fStatus').addEventListener('change',render);
+$('#grp').addEventListener('change',render);
 document.querySelector('.tabs').addEventListener('click',e=>{const v=e.target.dataset.v;if(!v)return;document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));$('#vList').hidden=v!=='vList';$('#vDash').hidden=v!=='vDash';if(v==='vDash')dash()});
 document.querySelector('thead').addEventListener('click',e=>{const k=e.target.dataset.k;if(!k)return;if(sortK===k)sortD=-sortD;else{sortK=k;sortD=1}render()});
 $('#orders').addEventListener('change',e=>{const k=e.target.dataset.ord;if(k){orders[k]=e.target.value;syncOrders()}});
 
 /* Synchronisation Google Drive (fichier atelier-pc.json) */
-const LS=k=>localStorage.getItem(k),FILE='atelier-pc.json',cid=()=>LS('atelier_drive_cid')||'';
+const LS=k=>localStorage.getItem(k),FILE='atelier-pc.json',cid=()=>CLIENT_ID||LS('atelier_drive_cid')||'';
 let tok=null,tokExp=0,syncTimer=null,busy=false,fileId=LS('atelier_drive_file')||'';
 const tokOk=()=>tok&&Date.now()<tokExp;
 function setSync(t,c){const b=$('#btnSync');b.textContent=t;b.dataset.s=c||''}
 function initDrive(){setSync(!cid()?'Drive : configurer':LS('atelier_drive_on')?'Drive : reconnecter':'Drive : connecter')}
+async function autoSync(){
+  if(!cid()||!LS('atelier_drive_on'))return;
+  setSync('Drive : connexion…','');
+  for(let i=0;i<50&&!(window.google&&google.accounts);i++)await new Promise(r=>setTimeout(r,100));
+  try{await getToken(true);await syncNow()}
+  catch(e){setSync('Drive : cliquer pour se reconnecter','err');
+    document.addEventListener('click',ev=>{if(!tokOk()&&ev.target.id!=='btnSync'&&!ev.target.closest('#cfg'))$('#btnSync').click()},{once:true})}
+}
 function mergeIn(list){
   const fresh=[];
   list.forEach(r=>{if(!r||!r.id)return;
@@ -414,10 +434,10 @@ function mergeIn(list){
   fresh.forEach(r=>{if(pcs.some(p=>p.id===r.id)){r.id=nextId();r.updatedAt=new Date().toISOString()}pcs.push(r)});
   pcs.sort((a,b)=>(b.created||'')>(a.created||'')?1:-1);
 }
-function getToken(){return new Promise((res,rej)=>{
+function getToken(silent){return new Promise((res,rej)=>{
   if(tokOk())return res(tok);
   if(!window.google||!google.accounts)return rej(new Error('script Google non chargé (hors ligne ?)'));
-  google.accounts.oauth2.initTokenClient({client_id:cid(),scope:'https://www.googleapis.com/auth/drive.file',prompt:LS('atelier_drive_on')?'':'consent',
+  google.accounts.oauth2.initTokenClient({client_id:cid(),scope:'https://www.googleapis.com/auth/drive.file',prompt:silent?'none':(LS('atelier_drive_on')?'':'consent'),
     callback:r=>{if(r.error)return rej(new Error(r.error));tok=r.access_token;tokExp=Date.now()+(r.expires_in-60)*1000;localStorage.setItem('atelier_drive_on','1');res(tok)},
     error_callback:e=>rej(new Error(e.type||'fenêtre fermée'))}).requestAccessToken();
 })}
@@ -467,7 +487,7 @@ $('#cfgSave').onclick=()=>{const v=$('#cid').value.trim();if(!v){toast('Collez v
 $('#cfgOff').onclick=()=>{['atelier_drive_cid','atelier_drive_file','atelier_drive_on'].forEach(k=>localStorage.removeItem(k));tok=null;fileId='';$('#cfg').classList.remove('open');initDrive()};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&tokOk())syncNow()});
 
-buildForm();load();render();initDrive();
+buildForm();load();render();initDrive();autoSync();
 })();
 </script>
 </body>
